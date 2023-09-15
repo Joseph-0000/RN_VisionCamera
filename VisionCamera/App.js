@@ -6,6 +6,7 @@ import {
   CameraRecordingOptions,
 } from "react-native-vision-camera";
 import Video from "react-native-video";
+import ImageUploader from "./ImageUploader"; // Import the ImageUploader component
 
 function App() {
   const [showCamera, setShowCamera] = useState(false);
@@ -13,6 +14,8 @@ function App() {
   const [videoPath, setVideoPath] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [showImageUploader, setShowImageUploader] = useState(false);
+  const [showCaptureButtons, setShowCaptureButtons] = useState(true); // Control the visibility of capture buttons
   const camera = useRef(null);
   const devices = useCameraDevices();
   const device = devices.back;
@@ -47,8 +50,8 @@ function App() {
           onRecordingFinished: (video) => {
             console.log("Recording finished:", video.path);
             setVideoPath(video.path);
-        setIsCapturing(false);
-        setShowCamera(false);
+            setIsCapturing(false);
+            setShowCamera(false);
           },
           onRecordingError: (error) => {
             console.error("Error recording video:", error);
@@ -77,6 +80,13 @@ function App() {
     }
   };
 
+  const handleUploadClick = () => {
+    // Hide the capture buttons when Upload is clicked
+    setShowCaptureButtons(false);
+    // Show the ImageUploader component
+    setShowImageUploader(true);
+  };
+
   if (device == null) {
     return <Text>Camera not available.</Text>;
   }
@@ -94,30 +104,44 @@ function App() {
             video={true}
           />
           <View style={styles.buttonContainer}>
-            {isCapturing ? null : (
-              <TouchableOpacity
-                style={styles.camButton}
-                onPress={() => capturePhoto()}
-              >
-                <Text>Capture Photo</Text>
-              </TouchableOpacity>
-            )}
-            {isRecording ? (
-              <TouchableOpacity
-                style={styles.camButton}
-                onPress={() => stopRecording()}
-              >
-                <Text>Stop Recording</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={styles.camButton}
-                onPress={() => startRecording()}
-              >
-                <Text>Start Recording</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+  {showCaptureButtons && !isCapturing && !isRecording ? (
+    <>
+      <TouchableOpacity
+        style={styles.captureButton}
+        onPress={() => capturePhoto()}
+      >
+        <Text>Capture Photo</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.captureButton}
+        onPress={() => startRecording()}
+      >
+        <Text>Start Recording</Text>
+      </TouchableOpacity>
+    </>
+  ) : null}
+
+  {isRecording && (
+    <TouchableOpacity
+      style={styles.captureButton}
+      onPress={() => stopRecording()}
+    >
+      <Text>Stop Recording</Text>
+    </TouchableOpacity>
+  )}
+
+  {/* "Upload Image/Video" button placed here */}
+  {!(isRecording || isCapturing) && (
+    <TouchableOpacity
+      style={styles.uploadButton}
+      onPress={() => handleUploadClick()}
+    >
+      <Text>Upload Image/Video</Text>
+    </TouchableOpacity>
+  )}
+</View>
+
+
         </>
       ) : (
         <>
@@ -148,6 +172,7 @@ function App() {
                 setImageSource("");
                 setVideoPath("");
                 setShowCamera(true);
+                setShowCaptureButtons(true); // Show capture buttons when going back
               }}
             >
               <Text style={{ color: "white", fontWeight: "bold" }}>Back</Text>
@@ -187,6 +212,7 @@ function App() {
                       setShowCamera(true);
                       setImageSource("");
                       setVideoPath("");
+                      setShowCaptureButtons(true); // Show capture buttons when using media
                     }}
                   >
                     <Text style={{ color: "white", fontWeight: "500" }}>
@@ -199,6 +225,16 @@ function App() {
           </View>
         </>
       )}
+
+      {/* Conditional rendering of ImageUploader component */}
+      {showImageUploader && (
+        <ImageUploader
+          onClose={() => {
+            setShowImageUploader(false);
+            setShowCaptureButtons(true); // Show capture buttons when closing ImageUploader
+          }}
+        />
+      )}
     </View>
   );
 }
@@ -209,7 +245,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  camButton: {
+  captureButton: {
+    backgroundColor: "#000",
+    padding: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#fff",
+    margin: 10,
+  },
+  uploadButton: {
     backgroundColor: "#000",
     padding: 10,
     justifyContent: "center",
